@@ -1,0 +1,5 @@
+Retrieved from PDS-PPI IGPP UCLA on 2026-01-13T21:04:41Z
+
+You can download this data again with the URL:
+
+/collection/urn:nasa:pds:galileo-mag-jup-calibrated:data-highres-europa
