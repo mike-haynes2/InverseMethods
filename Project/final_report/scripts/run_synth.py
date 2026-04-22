@@ -181,11 +181,11 @@ from library import run_mcmc
 
 ## NOW all conductivities passed in in log form!!
 
-m_guess = [1330, 1525, np.log10(2.)]
+m_guess = [1350, 1550, np.log10(2.)]
 
 print(np.max(Bsynth))
 
-markov_chain = run_mcmc(rsynth/1.e+03, Bsynth, m_guess, signal_freq, B0_vec_synth, noise_std=4.e-09, num_steps=50000)
+markov_chain = run_mcmc(rsynth/1.e+03, Bsynth, m_guess, signal_freq, B0_vec_synth, noise_std=18.e-09, num_steps=100000)
 
 
 

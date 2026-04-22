@@ -431,7 +431,7 @@ def log_prior(m):
     thickness = r0-r1
     # Define physical boundaries for Europa
     if (1.0 < thickness < 300.0) and \
-       (1430.0 < r0 < 1550.0) and \
+       (1430.0 < r0 < 1555.0) and \
        (-2.0 < log_sigma < 2.):
         return 0.0
     return -np.inf
@@ -445,11 +445,12 @@ def log_likelihood(m, r_pos_km, B_obs, freq, B0_vec, noise_std):
     M_curr = model_to_dipole_moment([r1, r0, sigma], freq, B0_vec)
     B_pred = calculate_B_dipole_final(r_pos_km, M_curr.real).ravel()
     
-    # Residuals in nT
-    residuals = B_obs.ravel() - B_pred
-    
+    # Residuals in Tesla(!)
+    B_pred_T = B_pred * 1.e-09
+    residuals = B_obs.ravel() - B_pred_T
+
     # chi2 = sum( (res/noise)^2 )
-    return -0.5 * np.sum((residuals **2)/ noise_std)
+    return -0.5 * np.sum((residuals **2)/ noise_std**2.)
 
 def run_mcmc(r_pos_km, B_obs, m_init, freq, B0_vec, noise_std, num_steps=10000):
     """
@@ -470,7 +471,8 @@ def run_mcmc(r_pos_km, B_obs, m_init, freq, B0_vec, noise_std, num_steps=10000):
 
     # [thickness_jump, r0_jump, log_sigma_jump]
     # Reduce these if acceptance is too low
-    step_sizes = np.array([0.08, 0.04, 0.002])
+    step_sizes = np.array([0.1, 0.05, 0.01])
+    
     
     chain = np.zeros((num_steps, 3))
     accept_count = 0
@@ -503,6 +505,15 @@ def run_mcmc(r_pos_km, B_obs, m_init, freq, B0_vec, noise_std, num_steps=10000):
                 accept_count += 1
 
         chain[i, :] = m_curr
+        ## dynamic acceptance algorithm
+        # if i > 0 and i % 500 == 0:
+        #     current_acc = accept_count / i
+        #     if current_acc < 0.10:
+        #         step_sizes *= 0.5
+        #         print(f"Step {i}: Acceptance too low ({current_acc:.2%}). Shrinking steps.")
+        #     elif current_acc > 0.50:
+        #         step_sizes *= 1.2
+        #         print(f"Step {i}: Acceptance too high ({current_acc:.2%}). Growing steps.")
         if i % 100 == 0:
             print(f"Step {i} | LL_curr: {ll_curr:.2f} | Last Delta_LL: {ll_prop - ll_curr:.2f}")
         
