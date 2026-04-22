@@ -185,7 +185,7 @@ m_guess = [1330, 1525, np.log10(2.)]
 
 print(np.max(Bsynth))
 
-markov_chain = run_mcmc(rsynth/1.e+03, Bsynth, m_guess, signal_freq, B0_vec_synth, noise_std=5.e-09, num_steps=50000)
+markov_chain = run_mcmc(rsynth/1.e+03, Bsynth, m_guess, signal_freq, B0_vec_synth, noise_std=4.e-09, num_steps=50000)
 
 
 

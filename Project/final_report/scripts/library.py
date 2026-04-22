@@ -449,7 +449,7 @@ def log_likelihood(m, r_pos_km, B_obs, freq, B0_vec, noise_std):
     residuals = B_obs.ravel() - B_pred
     
     # chi2 = sum( (res/noise)^2 )
-    return -0.5 * np.sum((residuals / noise_std)**2)
+    return -0.5 * np.sum((residuals **2)/ noise_std)
 
 def run_mcmc(r_pos_km, B_obs, m_init, freq, B0_vec, noise_std, num_steps=10000):
     """
@@ -470,7 +470,7 @@ def run_mcmc(r_pos_km, B_obs, m_init, freq, B0_vec, noise_std, num_steps=10000):
 
     # [thickness_jump, r0_jump, log_sigma_jump]
     # Reduce these if acceptance is too low
-    step_sizes = np.array([0.01, 0.005, 0.002])
+    step_sizes = np.array([0.08, 0.04, 0.002])
     
     chain = np.zeros((num_steps, 3))
     accept_count = 0
