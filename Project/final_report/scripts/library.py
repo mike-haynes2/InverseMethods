@@ -239,13 +239,16 @@ def plot_mag_synth(x, y, z, Bx, By, Bz, curveBx=None, curveBy=None, curveBz=None
 
 
 # implementation of generating synthetic data as a closed function
-def generate_synthetic_data(m_true, freq, B0_vec, noise_std=2.e-10, CA=100.):
+def generate_synthetic_data(m_true, freq, B0_vec, noise_std=2.e-10, CA=100., rvec=None):
     m_true = np.array(m_true, dtype=float)
     # Flyby from -5000km to 5000km along X, Closest Approach 100km at (0, 0, 1660 km)
     x = np.linspace(-5000, 5000, 100) * 1000
     y = np.ones_like(x) * 100.e+03
     z = np.ones_like(x) * (1560 + CA) * 1000
-    r_pos = np.stack([x, y, z], axis=1)
+    if rvec is not None:
+        r_pos = rvec
+    else:
+        r_pos = np.stack([x, y, z], axis=1)
     
     M_complex = model_to_dipole_moment(m_true, freq, B0_vec)
     # Real part represents the instantaneous induction response
@@ -430,8 +433,8 @@ def log_prior(m):
     r1, r0, log_sigma = m
     thickness = r0-r1
     # Define physical boundaries for Europa
-    if (1.0 < thickness < 300.0) and \
-       (1430.0 < r0 < 1555.0) and \
+    if (1.0 < thickness < 200.0) and \
+       (1470.0 < r0 < 1555.0) and \
        (-2.0 < log_sigma < 2.):
         return 0.0
     return -np.inf
@@ -471,7 +474,7 @@ def run_mcmc(r_pos_km, B_obs, m_init, freq, B0_vec, noise_std, num_steps=10000):
 
     # [thickness_jump, r0_jump, log_sigma_jump]
     # Reduce these if acceptance is too low
-    step_sizes = np.array([0.1, 0.05, 0.01])
+    step_sizes = np.array([0.2, 0.1, 0.02])
     
     
     chain = np.zeros((num_steps, 3))

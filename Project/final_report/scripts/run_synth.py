@@ -22,16 +22,32 @@ idx_start = 0
 idx_stop = 6000
 
 
+# Check if version is 1.23.0 or higher
+is_new_numpy = np.lib.NumpyVersion(np.__version__) >= '1.23.0'
+def date_converter(s):
+    # Decode only if it's bytes (older NumPy)
+    if not is_new_numpy and isinstance(s, bytes):
+        s = s.decode('utf-8')
+    return np.datetime64(s)
 
-# Load the data to handle datetimes
 dat_E14 = np.loadtxt(
     path_to_gal+'E14/ORB14_EUR_EPHIO.TAB',
     skiprows=idx_start,
     max_rows=(idx_stop-idx_start), 
     dtype={'names': names, 'formats': formats},
     # Converter for index 0 (the date string)
-    converters={0: lambda s: np.datetime64(s.decode('utf-8'))}
+    converters={0: date_converter}
 )
+
+# # Load the data to handle datetimes
+# dat_E14 = np.loadtxt(
+#     path_to_gal+'E14/ORB14_EUR_EPHIO.TAB',
+#     skiprows=idx_start,
+#     max_rows=(idx_stop-idx_start), 
+#     dtype={'names': names, 'formats': formats},
+#     # Converter for index 0 (the date string)
+#     converters={0: lambda s: np.datetime64(s.decode('utf-8'))}
+# )
 
 
 # define the variable arrays
@@ -181,11 +197,12 @@ from library import run_mcmc
 
 ## NOW all conductivities passed in in log form!!
 
-m_guess = [1350, 1550, np.log10(2.)]
+m_guess = [1390, 1550, np.log10(2.)]
+#m_guess = [1400, 1540, np.log(2.5)] # true val
 
 print(np.max(Bsynth))
 
-markov_chain = run_mcmc(rsynth/1.e+03, Bsynth, m_guess, signal_freq, B0_vec_synth, noise_std=18.e-09, num_steps=100000)
+markov_chain = run_mcmc(rsynth/1.e+03, Bsynth, m_guess, signal_freq, B0_vec_synth, noise_std=18.e-09, num_steps=400000)
 
 
 
@@ -195,3 +212,5 @@ from library import plot_mcmc_traces, plot_mcmc_corner
 plot_mcmc_traces(markov_chain)
 
 plot_mcmc_corner(markov_chain)
+
+np.savetxt('markov_chain_dat.txt', markov_chain)
