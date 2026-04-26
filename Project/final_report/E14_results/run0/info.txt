@@ -1,0 +1,8 @@
+Step 399900 | LL_curr: -3326.07 | Last Delta_LL: -6037.37
+MCMC Finished. Acceptance Rate: 0.006
+
+
+step_sizes = np.array([0.3, 0.16, 0.02])
+
+
+guess: m_guess = [1490, 1550, np.log10(2.)]

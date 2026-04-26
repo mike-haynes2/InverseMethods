@@ -97,7 +97,7 @@ def model_to_dipole_moment(m, freq, B0_vec):
     
     # Dipole Moment M = -Q * B0 * R_outer^3 / (scaling constant)
     # Using the standard induced moment definition
-    M_complex = -Q * B0_vec * (r0_km * 1000)**3
+    M_complex = - Q * B0_vec * (r0_km * 1000)**3
     return M_complex
 
 
@@ -134,7 +134,7 @@ def model_to_dipole_moment(m, freq, B0_vec):
 import matplotlib.pyplot as plt
 from datetime import datetime
 import matplotlib.dates as mdates
-def plot_mag_trajectory(t, x, y, z, Bx, By, Bz, curveBx=None, curveBy=None, curveBz=None, color='navy', lw=2.2, title='Galileo MAG: E14 Flyby', figname = 'E14_dat.png', nplots=3, save=False):
+def plot_mag_trajectory(t, x, y, z, Bx, By, Bz, curveBx=None, curveBy=None, curveBz=None, curve2Bx=None, curve2By=None, curve2Bz=None, color='navy', lw=2.2, title='Galileo MAG: E14 Flyby', figname = 'E14_dat.png', nplots=3, save=False):
 
     r = np.sqrt(x**2 + y**2 + z**2)
     CA_idx = np.argmin(r)
@@ -155,9 +155,15 @@ def plot_mag_trajectory(t, x, y, z, Bx, By, Bz, curveBx=None, curveBy=None, curv
     ax[2].set_xlabel('Time [UTC]')
 
     if curveBx is not None:
-        ax[0].plot(t, curveBx, lw=(lw/2.), color='teal', label='Recovered dipole')
+        ax[0].plot(t, curveBx, lw=(lw/2.), color='teal', label='Recovered dipole: Gauss-Newton')
         ax[1].plot(t, curveBy, lw=(lw/2.), color='teal')
         ax[2].plot(t, curveBz, lw=(lw/2.), color='teal')
+
+    if curve2Bx is not None:
+        ax[0].plot(t, curve2Bx, lw=(lw/2.), color='cyan', label='Recovered dipole: Levenberg-Marquadt')
+        ax[1].plot(t, curve2By, lw=(lw/2.), color='cyan')
+        ax[2].plot(t, curve2Bz, lw=(lw/2.), color='cyan')
+
 
     for i in range(nplots):
         ax[i].axvline(t[CA_idx], color='red', lw=3.2, ls='--')
@@ -382,7 +388,8 @@ def residuals_wrapper(m_inv, r_pos, B_obs, freq, B0_vec):
     
     # 3. Return the 1D residual vector
     # Scipy handles the squaring and summing internally
-    return (G_m - B_obs).ravel()
+    #print(np.max(G_m),np.max(B_obs))
+    return (G_m - B_obs*1.e+09).ravel()
 
 def run_scipy_inversion(r_pos, B_obs, m_guess, freq, B0_vec):
     # m_guess = [r1, r0, sigma] -> convert to [r1, r0, log10_sigma]
@@ -390,8 +397,8 @@ def run_scipy_inversion(r_pos, B_obs, m_guess, freq, B0_vec):
     
     # Define physical bounds (Crucial for Europa!)
     # r1 must be > 0, r0 must be <= 1560, log_sigma between -2 and 1
-    lower_bounds = [0.0, 1000.0, -3.0]
-    upper_bounds = [1560.0, 1560.0, 2.0]
+    lower_bounds = [1300.0, 1350.0, -3.0]
+    upper_bounds = [1540.0, 1560.0, 2.0]
     
     res = least_squares(
         residuals_wrapper, 
@@ -400,11 +407,12 @@ def run_scipy_inversion(r_pos, B_obs, m_guess, freq, B0_vec):
         method='trf',         # Trust Region Reflective (better than pure LM for bounds)
         loss='soft_l1',       # Robust to outliers/noise
         x_scale='jac',        # Automatically scales parameters based on Jacobian
-        ftol=1e-8, 
-        xtol=1e-8,
-        bounds=(lower_bounds, upper_bounds)
+        ftol=1e-10, 
+        xtol=1e-10,
+        bounds=(lower_bounds, upper_bounds),
+        diff_step=[4.0, 2.0, 0.05]
     )
-    
+    print(res)
     # Convert back to physical units
     m_final = res.x
     return [m_final[0], m_final[1], 10**m_final[2]]
@@ -474,7 +482,7 @@ def run_mcmc(r_pos_km, B_obs, m_init, freq, B0_vec, noise_std, num_steps=10000):
 
     # [thickness_jump, r0_jump, log_sigma_jump]
     # Reduce these if acceptance is too low
-    step_sizes = np.array([0.2, 0.1, 0.02])
+    step_sizes = np.array([0.3, 0.16, 0.02])
     
     
     chain = np.zeros((num_steps, 3))

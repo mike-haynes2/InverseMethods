@@ -18,8 +18,8 @@ idx_110 = 789
 idx_130 = 4370
 
 # define start / stop rows
-idx_start = 0
-idx_stop = 6000
+idx_start = idx_110
+idx_stop = idx_130
 
 
 # Check if version is 1.23.0 or higher
@@ -63,7 +63,8 @@ Z_arr_RE = dat_E14['z']
 # define variables
 mu0 = scipy.constants.mu_0
 RE = 1560.8e+03 
-B0_detrend_nT = np.array([10,-216,-409])
+B0_detrend_nT = np.array([10,-216,-409])    # Harris et al
+#B0_detrend_nT = np.array([8.,-219.1,-405.9])    # me
 B0_detrend = B0_detrend_nT*1.e-09
 signal_period = 11.1 # hr
 signal_freq = 1. / (11.1 * 3600) #convert to seconds, then reciprocal to frequency
@@ -83,7 +84,7 @@ from library import perform_gauss_newton, plot_mag_synth, calculate_B_dipole_fin
 #B0_vec_synth = np.array([4., -209., -385.])*1.e-09
 
 #m_true = [1400.0, 1540.0, 2.5] # r1, r0, sigma
-m_guess = [1480.0, 1552.0, 2.4]
+m_guess = [1450.0, 1550.0, 2.]
 
 rvec_km = np.stack([X_arr_RE, Y_arr_RE, Z_arr_RE], axis=1)*1560.8
 
@@ -94,14 +95,14 @@ B_arr = np.stack([Bx_arr_nT, By_arr_nT, Bz_arr_nT], axis=1)*1.e-09
 # - running pseudo inversion as a way to handle large ratio of singular values
 # - including tikhonov component of inversion to assign small buffer against singularity in inversion
 # pass in r values in KM!!
-m_final = perform_gauss_newton(rvec_km, B_arr, m_guess, signal_freq, B0_detrend, max_iter=100, pseudo_inv=False,do_col_norms=False)
+m_final = perform_gauss_newton(rvec_km, B_arr-B0_detrend, m_guess, signal_freq, B0_detrend_nT, max_iter=100, pseudo_inv=True,do_col_norms=False)
 
 print(m_final)
 
 from library import run_scipy_inversion
 
 # pass in r values in KM!!
-m_recovered = run_scipy_inversion(rvec_km, B_arr, m_guess, signal_freq, B0_detrend)
+m_recovered = run_scipy_inversion(rvec_km, B_arr-B0_detrend, m_guess, signal_freq, B0_detrend)
 print(m_recovered)
 
 
@@ -152,7 +153,7 @@ if test_vals:
 from library import generate_synthetic_data
 
 m_rec_GN = [1349.04, 1550.64, 2.279]
-r_rec2, B_rec2 = generate_synthetic_data(m_rec_GN, signal_freq, B0_detrend,noise_std=1.e-11, rvec=rvec_km)
+r_rec2, B_rec2 = generate_synthetic_data(m_rec_GN, signal_freq, -B0_detrend,noise_std=1.e-11, rvec=rvec_km)
 
 
 
@@ -161,10 +162,22 @@ By_rec2_detrend = (B_rec2[:,1]-B0_detrend[1])
 Bz_rec2_detrend = (B_rec2[:,2]-B0_detrend[2])
 
 
+m_rec_LM = [1417.4032256288253, 1469.3900473622903, np.log(9.221861843290359)]
+r_recL, B_recL = generate_synthetic_data(m_rec_LM, signal_freq, -B0_detrend,noise_std=1.e-11, rvec=rvec_km)
+
+print(B_recL)
+print(B_rec2)
+
+
+Bx_recL_detrend = (B_recL[:,0]-B0_detrend[0])
+By_recL_detrend = (B_recL[:,1]-B0_detrend[1])
+Bz_recL_detrend = (B_recL[:,2]-B0_detrend[2])
+
 
 plot_mag_trajectory(t_arr,X_arr_RE,Y_arr_RE,Z_arr_RE, 
                     Bx_arr_nT-B0_detrend_nT[0], By_arr_nT-B0_detrend_nT[1], Bz_arr_nT-B0_detrend_nT[2], 
                     curveBx=Bx_rec2_detrend, curveBy=By_rec2_detrend, curveBz=Bz_rec2_detrend,
+                    curve2Bx=Bx_recL_detrend, curve2By=By_recL_detrend, curve2Bz=Bz_recL_detrend,
                     save=False)
 
 
@@ -175,20 +188,68 @@ from library import run_mcmc
 
 ## NOW all conductivities passed in in log form!!
 
-# m_guess = [1390, 1550, np.log10(2.)]
+m_guess = [1470, 1550, np.log10(2.)]
 # #m_guess = [1400, 1540, np.log(2.5)] # true val
 
 # print(np.max(Bsynth))
 
-# markov_chain = run_mcmc(rsynth/1.e+03, Bsynth, m_guess, signal_freq, B0_vec_synth, noise_std=18.e-09, num_steps=400000)
+# print(rvec_km)
+# print(B_arr)
+# print(signal_freq)
+# print(B0_detrend)
+
+# print(np.var(B_arr))
+
+
+markov_chain = run_mcmc(rvec_km, B_arr-B0_detrend, m_guess, signal_freq, B0_detrend, noise_std=10.e-09, num_steps=400000)
 
 
 
-# from library import plot_mcmc_traces, plot_mcmc_corner
+from library import plot_mcmc_traces, plot_mcmc_corner
 
 
-# plot_mcmc_traces(markov_chain)
+plot_mcmc_traces(markov_chain)
 
-# plot_mcmc_corner(markov_chain)
+plot_mcmc_corner(markov_chain)
+
+
+markov_chain[:,2] = 10 ** markov_chain[:,2]
+
+burn_in = int(0.2 * len(markov_chain))
+clean_chain = markov_chain[burn_in:, :]
+
+# 2. Calculate the Mean (Maximum Likelihood estimate for a Gaussian posterior)
+# axis=0 calculates the mean for each parameter column
+mean_solution = np.mean(clean_chain, axis=0)
+
+# 3. Calculate 10th and 90th percentiles
+# This gives you the 80% credible interval
+percentile_10 = np.percentile(clean_chain, 10, axis=0)
+percentile_90 = np.percentile(clean_chain, 90, axis=0)
+
+print(f"Mean Solution (r1, r0, sigma): {mean_solution}")
+print(f"10th Percentile: {percentile_10}")
+print(f"90th Percentile: {percentile_90}")
+
+
+
+param_names = ['Inner Radius (km)', 'Outer Radius (km)', 'Conductivity']
+import matplotlib.pyplot as plt
+for i in range(3):
+    plt.figure()
+    plt.hist(clean_chain[:, i], bins=50, color='skyblue', edgecolor='black')
+    plt.axvline(mean_solution[i], color='red', linestyle='--', label='Mean')
+    plt.axvline(percentile_10[i], color='orange', linestyle=':', label='10%')
+    plt.axvline(percentile_90[i], color='orange', linestyle=':', label='90%')
+    plt.title(f'Posterior Distribution: {param_names[i]}')
+    if i < 2:
+        plt.xlabel('radius [km]')
+    else:
+        plt.xlabel('conductivity [S/m]')
+
+    plt.ylabel('N (#)')
+    plt.legend()
+    plt.show()
+
 
 # np.savetxt('markov_chain_dat.txt', markov_chain)
