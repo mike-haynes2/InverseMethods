@@ -84,7 +84,7 @@ from library import perform_gauss_newton, plot_mag_synth, calculate_B_dipole_fin
 #B0_vec_synth = np.array([4., -209., -385.])*1.e-09
 
 #m_true = [1400.0, 1540.0, 2.5] # r1, r0, sigma
-m_guess = [1450.0, 1550.0, 2.]
+m_guess = [1450.0, 1550.0, 1.]
 
 rvec_km = np.stack([X_arr_RE, Y_arr_RE, Z_arr_RE], axis=1)*1560.8
 
@@ -152,7 +152,7 @@ if test_vals:
 
 from library import generate_synthetic_data
 
-m_rec_GN = [1349.04, 1550.64, 2.279]
+m_rec_GN = [1349.04, 1554.64, 2.179]
 r_rec2, B_rec2 = generate_synthetic_data(m_rec_GN, signal_freq, -B0_detrend,noise_std=1.e-11, rvec=rvec_km)
 
 
@@ -188,8 +188,8 @@ from library import run_mcmc
 
 ## NOW all conductivities passed in in log form!!
 
-m_guess = [1470, 1550, np.log10(2.)]
-# #m_guess = [1400, 1540, np.log(2.5)] # true val
+m_guess = [1425, 1540, np.log10(2.)]
+
 
 # print(np.max(Bsynth))
 
@@ -201,55 +201,55 @@ m_guess = [1470, 1550, np.log10(2.)]
 # print(np.var(B_arr))
 
 
-markov_chain = run_mcmc(rvec_km, B_arr-B0_detrend, m_guess, signal_freq, B0_detrend, noise_std=10.e-09, num_steps=400000)
+# markov_chain = run_mcmc(rvec_km, B_arr-B0_detrend, m_guess, signal_freq, B0_detrend, noise_std=10.e-09, num_steps=800000)
 
 
 
-from library import plot_mcmc_traces, plot_mcmc_corner
+# from library import plot_mcmc_traces, plot_mcmc_corner
 
 
-plot_mcmc_traces(markov_chain)
+# plot_mcmc_traces(markov_chain)
 
-plot_mcmc_corner(markov_chain)
-
-
-markov_chain[:,2] = 10 ** markov_chain[:,2]
-
-burn_in = int(0.2 * len(markov_chain))
-clean_chain = markov_chain[burn_in:, :]
-
-# 2. Calculate the Mean (Maximum Likelihood estimate for a Gaussian posterior)
-# axis=0 calculates the mean for each parameter column
-mean_solution = np.mean(clean_chain, axis=0)
-
-# 3. Calculate 10th and 90th percentiles
-# This gives you the 80% credible interval
-percentile_10 = np.percentile(clean_chain, 10, axis=0)
-percentile_90 = np.percentile(clean_chain, 90, axis=0)
-
-print(f"Mean Solution (r1, r0, sigma): {mean_solution}")
-print(f"10th Percentile: {percentile_10}")
-print(f"90th Percentile: {percentile_90}")
+# plot_mcmc_corner(markov_chain)
 
 
+# markov_chain[:,2] = 10 ** markov_chain[:,2]
 
-param_names = ['Inner Radius (km)', 'Outer Radius (km)', 'Conductivity']
-import matplotlib.pyplot as plt
-for i in range(3):
-    plt.figure()
-    plt.hist(clean_chain[:, i], bins=50, color='skyblue', edgecolor='black')
-    plt.axvline(mean_solution[i], color='red', linestyle='--', label='Mean')
-    plt.axvline(percentile_10[i], color='orange', linestyle=':', label='10%')
-    plt.axvline(percentile_90[i], color='orange', linestyle=':', label='90%')
-    plt.title(f'Posterior Distribution: {param_names[i]}')
-    if i < 2:
-        plt.xlabel('radius [km]')
-    else:
-        plt.xlabel('conductivity [S/m]')
+# burn_in = int(0.1 * len(markov_chain))
+# clean_chain = markov_chain[burn_in:, :]
 
-    plt.ylabel('N (#)')
-    plt.legend()
-    plt.show()
+# # 2. Calculate the Mean (Maximum Likelihood estimate for a Gaussian posterior)
+# # axis=0 calculates the mean for each parameter column
+# mean_solution = np.mean(clean_chain, axis=0)
+
+# # 3. Calculate 10th and 90th percentiles
+# # This gives you the 80% credible interval
+# percentile_10 = np.percentile(clean_chain, 10, axis=0)
+# percentile_90 = np.percentile(clean_chain, 90, axis=0)
+
+# print(f"Mean Solution (r1, r0, sigma): {mean_solution}")
+# print(f"10th Percentile: {percentile_10}")
+# print(f"90th Percentile: {percentile_90}")
+
+
+
+# param_names = ['Inner Radius (km)', 'Outer Radius (km)', 'Conductivity']
+# import matplotlib.pyplot as plt
+# for i in range(3):
+#     plt.figure()
+#     plt.hist(clean_chain[:, i], bins=50, color='skyblue', edgecolor='black')
+#     plt.axvline(mean_solution[i], color='red', linestyle='--', label='Mean')
+#     plt.axvline(percentile_10[i], color='orange', linestyle=':', label='10%')
+#     plt.axvline(percentile_90[i], color='orange', linestyle=':', label='90%')
+#     plt.title(f'Posterior Distribution: {param_names[i]}')
+#     if i < 2:
+#         plt.xlabel('radius [km]')
+#     else:
+#         plt.xlabel('conductivity [S/m]')
+
+#     plt.ylabel('N (#)')
+#     plt.legend()
+#     plt.show()
 
 
 # np.savetxt('markov_chain_dat.txt', markov_chain)

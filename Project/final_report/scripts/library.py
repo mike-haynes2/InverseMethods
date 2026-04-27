@@ -209,9 +209,9 @@ def plot_mag_synth(x, y, z, Bx, By, Bz, curveBx=None, curveBy=None, curveBz=None
     ax[2].set_xlabel('$x$ position [$R_E$]')
 
     if curveBx is not None:
-        ax[0].plot(x/RE, curveBx, lw=(lw/2.), color='teal', label='Recovered dipole: LM')
-        ax[1].plot(x/RE, curveBy, lw=(lw/2.), color='teal')
-        ax[2].plot(x/RE, curveBz, lw=(lw/2.), color='teal')
+        ax[0].plot(x/RE, curveBx, lw=(lw/2.), color='limegreen', label='Recovered dipole: LM')
+        ax[1].plot(x/RE, curveBy, lw=(lw/2.), color='limegreen')
+        ax[2].plot(x/RE, curveBz, lw=(lw/2.), color='limegreen')
 
     if curve2Bx is not None:
         ax[0].plot(x/RE, curve2Bx, lw=(lw/2.), color='cyan', label='Recovered dipole: GN')

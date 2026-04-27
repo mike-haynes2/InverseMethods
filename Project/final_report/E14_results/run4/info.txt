@@ -1,0 +1,14 @@
+
+
+N=800k samples
+
+initial guess:
+m_guess = [1470, 1550, np.log10(2.)]
+
+
+
+Statistics on distribution:
+MCMC Finished. Acceptance Rate: 0.005
+Mean Solution (r1, r0, sigma): [1471.79411382 1549.05921972    4.66009068]
+10th Percentile: [1464.59196636 1545.18865248    2.11304454]
+90th Percentile: [1480.78279189 1552.97645326    8.5580368 ]

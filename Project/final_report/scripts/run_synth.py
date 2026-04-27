@@ -87,6 +87,7 @@ m_guess = [1300.0, 1560.0, 1.]
 
 rsynth, Bsynth = generate_synthetic_data(m_true, signal_freq, B0_vec_synth,noise_std=1.e-9)
 
+print(len(rsynth)*3)
 
 Bx_synth_detrend = (Bsynth[:,0]-B0_vec_synth[0])*1.e+09
 By_synth_detrend = (Bsynth[:,1]-B0_vec_synth[1])*1.e+09
@@ -102,14 +103,14 @@ plot_mag_synth(rsynth[:,0],rsynth[:,1],rsynth[:,2],
 # - running pseudo inversion as a way to handle large ratio of singular values
 # - including tikhonov component of inversion to assign small buffer against singularity in inversion
 # pass in r values in KM!!
-m_final = perform_gauss_newton(rsynth/1.e+03, Bsynth, m_guess, signal_freq, B0_vec_synth, max_iter=100, pseudo_inv=False,do_col_norms=False)
+m_final = perform_gauss_newton(rsynth/1.e+03, Bsynth-B0_vec_synth, m_guess, signal_freq, B0_vec_synth, max_iter=100, pseudo_inv=False,do_col_norms=False)
 
 
 
 from library import run_scipy_inversion
 
 # pass in r values in KM!!
-m_recovered = run_scipy_inversion(rsynth/1.e+03, Bsynth, m_guess, signal_freq, B0_vec_synth)
+m_recovered = run_scipy_inversion(rsynth/1.e+03, Bsynth-B0_vec_synth, m_guess, signal_freq, B0_vec_synth)
 print(m_recovered)
 
 
@@ -202,15 +203,15 @@ m_guess = [1390, 1550, np.log10(2.)]
 
 print(np.max(Bsynth))
 
-markov_chain = run_mcmc(rsynth/1.e+03, Bsynth, m_guess, signal_freq, B0_vec_synth, noise_std=18.e-09, num_steps=400000)
+# markov_chain = run_mcmc(rsynth/1.e+03, Bsynth, m_guess, signal_freq, B0_vec_synth, noise_std=18.e-09, num_steps=400000)
 
 
 
-from library import plot_mcmc_traces, plot_mcmc_corner
+# from library import plot_mcmc_traces, plot_mcmc_corner
 
 
-plot_mcmc_traces(markov_chain)
+# plot_mcmc_traces(markov_chain)
 
-plot_mcmc_corner(markov_chain)
+# plot_mcmc_corner(markov_chain)
 
-np.savetxt('markov_chain_dat.txt', markov_chain)
+# np.savetxt('markov_chain_dat.txt', markov_chain)

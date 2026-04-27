@@ -1,0 +1,8 @@
+
+m_guess = [1425, 1540, np.log10(2.)]
+
+Step 799900 | LL_curr: -3325.45 | Last Delta_LL: -23964.03
+MCMC Finished. Acceptance Rate: 0.006
+Mean Solution (r1, r0, sigma): [1429.95064497 1539.79201375    3.15218884]
+10th Percentile: [1415.2837067  1537.35022062    1.90531165]
+90th Percentile: [1445.36236709 1543.54152197    4.89180014]
